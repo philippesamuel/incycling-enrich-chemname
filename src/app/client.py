@@ -7,7 +7,7 @@ from requests.exceptions import RequestException
 
 from app.cas import find_first_cas_number
 from app.config import PUBCHEM_API_URL, SYNONYMS_ENDPOINT_TEMPLATE
-from app.main import ErrorFlags
+from app.types import ErrorFlags
 
 type Json = dict[str, Any]
 
@@ -34,15 +34,15 @@ class PubChemClient:
 
     def resolve_cas(self, name: str) -> str:
         try:
-            logger.info(f"Fetching info for {name}")
+            logger.info("Fetching info for {}", name)
             info = self.get_compound_info(name.lower())
         except (RequestException, ValueError) as e:
-            logger.error(f"Error fetching info: {e}")
+            logger.error("Error fetching info: {}", e)
             return ErrorFlags.ERROR
         else:
             cas_number = find_first_cas_number(info.synonym)
             if cas_number is not None:
-                logger.success(f"Found CAS number: {cas_number}")
+                logger.success("Found CAS number: {}", cas_number)
                 return cas_number
             logger.warning("No CAS number found")
             return ErrorFlags.NOT_FOUND

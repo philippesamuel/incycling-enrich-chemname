@@ -1,24 +1,15 @@
-from enum import StrEnum
 from pathlib import Path
 from typing import Optional, Protocol
 
 import typer
+from loguru import logger
 
 from app.client import PubChemClient
 from app.data_io import get_compound_names, get_files, handle_io_dir, write_csv_file
 from app.session import build_session
+from app.types import ColEnum
 
 app = typer.Typer()
-
-
-class ErrorFlags(StrEnum):
-    ERROR = "ERROR"
-    NOT_FOUND = "NOT_FOUND"
-
-
-class ColEnum(StrEnum):
-    NAMES = "Names"
-    CAS = "CAS-Number"
 
 
 class CASResolver(Protocol):
@@ -37,6 +28,8 @@ def main(
         files = get_files(input_dir)
         for file in files:
             out_file = output_dir / file.name
+            if out_file.exists():
+                logger.warning("Overwriting existing file {}", out_file)
             process_file(client, file=file, out_file=out_file)
 
 
@@ -46,7 +39,7 @@ def process_file(client: CASResolver, file: Path, out_file: Path) -> None:
     write_csv_file(
         out_file,
         data={
-            ColEnum.NAMES: names,
+            ColEnum.NAME: names,
             ColEnum.CAS: cas_numbers,
         },
     )
