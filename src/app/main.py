@@ -1,17 +1,12 @@
 from enum import StrEnum
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Protocol
 
-import polars as pl
 import typer
-from loguru import logger
-from requests.exceptions import RequestException
 
 from app.client import PubChemClient
-from app.config import CAS_PATTERN
-from app.data_io import get_compound_names, get_files
+from app.data_io import get_compound_names, get_files, handle_io_dir, write_csv_file
 from app.session import build_session
-
 
 app = typer.Typer()
 
@@ -21,56 +16,40 @@ class ErrorFlags(StrEnum):
     NOT_FOUND = "NOT_FOUND"
 
 
+class ColEnum(StrEnum):
+    NAMES = "Names"
+    CAS = "CAS-Number"
+
+
+class CASResolver(Protocol):
+    def resolve_cas(self, name: str) -> str: ...
+
+
 @app.command()
 def main(
     input_dir: Path,
     output_dir: Optional[Path] = None,
 ) -> None:
-    if output_dir is None:
-        output_dir = input_dir.parent / "output"
-
-    if not input_dir.exists():
-        raise ValueError("Input directory does not exist. Pass a valid folder")
-    if not input_dir.is_dir():
-        raise ValueError("Input must be a valid folder")
-
-    # create output folder, do not raise exception if it already exists
-    output_dir.mkdir(exist_ok=True)
+    input_dir, output_dir = handle_io_dir(input_dir, output_dir)
 
     with build_session() as s:
         client = PubChemClient(session=s)
         files = get_files(input_dir)
         for file in files:
             out_file = output_dir / file.name
-            names = get_compound_names(file)
-            cas_numbers: list[str] = []
-            for name in names:
-                try:
-                    logger.info(f"Fetching info for {name}")
-                    compound_info = client.get_compound_info(name.lower())
-                except (RequestException, ValueError) as e:
-                    logger.error(f"Error fetching info: {e}")
-                    cas_numbers.append(ErrorFlags.ERROR)
-                else:
-                    cas_number = find_first_cas_number(compound_info.synonym)
-                    if cas_number is None:
-                        cas_numbers.append(ErrorFlags.NOT_FOUND)
-                    else:
-                        cas_numbers.append(cas_number)
-
-            df = pl.DataFrame({"Name": names, "CAS-Number": cas_numbers})
-            df.write_csv(out_file)
+            process_file(client, file=file, out_file=out_file)
 
 
-def find_first_cas_number(strings: list[str]) -> str | None:
-    for s in strings:
-        if m := CAS_PATTERN.search(s):
-            number = m.group("number")
-            cas_number = f"CAS-{number}"
-            logger.success(f"Found CAS number: {cas_number}")
-            return cas_number
-    logger.warning("No CAS number found")
-    return None
+def process_file(client: CASResolver, file: Path, out_file: Path) -> None:
+    names = get_compound_names(file)
+    cas_numbers = [client.resolve_cas(name) for name in names]
+    write_csv_file(
+        out_file,
+        data={
+            ColEnum.NAMES: names,
+            ColEnum.CAS: cas_numbers,
+        },
+    )
 
 
 if __name__ == "__main__":

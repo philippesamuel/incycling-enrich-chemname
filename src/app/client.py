@@ -1,9 +1,13 @@
 from typing import Any
 
 import requests
+from loguru import logger
 from pydantic import BaseModel, Field
+from requests.exceptions import RequestException
 
+from app.cas import find_first_cas_number
 from app.config import PUBCHEM_API_URL, SYNONYMS_ENDPOINT_TEMPLATE
+from app.main import ErrorFlags
 
 type Json = dict[str, Any]
 
@@ -23,8 +27,21 @@ class CompoundInfo(BaseModel):
 class PubChemClient:
     """PubChem client to fetch compound information."""
 
-    def __init__(self, session: requests.Session) -> None:
+    def __init__(self, session: requests.Session):
         self.session = session
+
+    def resolve_cas(self, name: str) -> str:
+        try:
+            logger.info(f"Fetching info for {name}")
+            info = self.get_compound_info(name.lower())
+        except (RequestException, ValueError) as e:
+            logger.error(f"Error fetching info: {e}")
+            return ErrorFlags.ERROR
+        else:
+            cas_number = find_first_cas_number(info.synonym)
+            if cas_number is not None:
+                return cas_number
+            return ErrorFlags.NOT_FOUND
 
     def get_compound_info(self, compound_name: str) -> CompoundInfo:
         endpoint = SYNONYMS_ENDPOINT_TEMPLATE.format(compound_name=compound_name)
