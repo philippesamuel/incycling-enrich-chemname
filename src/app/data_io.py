@@ -9,6 +9,11 @@ COLUMNS = [ColEnum.NAME]
 
 
 def handle_io_dir(input_dir: Path, output_dir: Optional[Path]) -> tuple[Path, Path]:
+    """Validate paths and ensure the output directory exists.
+
+    Returns:
+        A tuple of (resolved_input_dir, resolved_output_dir).
+    """
     input_dir, output_dir = validate_io_dir(input_dir, output_dir)
     # create output folder, do not raise exception if it already exists
     output_dir.mkdir(exist_ok=True)

@@ -33,6 +33,13 @@ class PubChemClient:
         self.session = session
 
     def resolve_cas(self, name: str) -> str:
+        """Resolve a compound name to a CAS number.
+
+        Returns:
+            The CAS number string (e.g., "50-00-0") if found,
+            ErrorFlags.ERROR if the network request or parsing failed,
+            or ErrorFlags.NOT_FOUND if PubChem responded but no CAS synonym exists.
+        """
         try:
             logger.info("Fetching info for {}", name)
             info = self.get_compound_info(name.lower())
