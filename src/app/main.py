@@ -1,18 +1,16 @@
 from enum import StrEnum
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Optional
 
-from charset_normalizer import CharsetMatch
 import polars as pl
 import typer
 from loguru import logger
-from requests import Session
 from requests.exceptions import RequestException
-from requests_cache import CacheMixin
-from requests_ratelimiter import LimiterMixin
 
 from app.client import PubChemClient
-from app.config import CACHE_EXPIRE_AFTER, CAS_PATTERN, RATE_LIMIT_PER_SECOND
+from app.config import CAS_PATTERN
+from app.data_io import get_compound_names, get_files
+from app.session import build_session
 
 
 app = typer.Typer()
@@ -62,26 +60,6 @@ def main(
 
             df = pl.DataFrame({"Name": names, "CAS-Number": cas_numbers})
             df.write_csv(out_file)
-
-
-class CachedLimiterSession(CacheMixin, LimiterMixin, Session):
-    pass
-
-
-def build_session() -> Session:
-    return CachedLimiterSession(
-        per_second=RATE_LIMIT_PER_SECOND, 
-        expire_after=CACHE_EXPIRE_AFTER,
-    )
-
-
-def get_files(folder: Path) -> Iterable[Path]:
-    yield from folder.glob("*.csv")
-
-
-def get_compound_names(file: Path) -> list[str]:
-    names = pl.read_csv(file, columns=["Name"]).to_series()
-    return names.to_list()
 
 
 def find_first_cas_number(strings: list[str]) -> str | None:
