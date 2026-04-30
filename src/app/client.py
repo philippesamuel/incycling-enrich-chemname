@@ -13,6 +13,8 @@ type Json = dict[str, Any]
 
 
 class CompoundInfo(BaseModel):
+    """Compound information matching relevant fields in PubChem API's response schema"""
+
     cid: int = Field(
         ..., alias="CID", validation_alias="CID", description="Compound ID"
     )
@@ -40,7 +42,9 @@ class PubChemClient:
         else:
             cas_number = find_first_cas_number(info.synonym)
             if cas_number is not None:
+                logger.success(f"Found CAS number: {cas_number}")
                 return cas_number
+            logger.warning("No CAS number found")
             return ErrorFlags.NOT_FOUND
 
     def get_compound_info(self, compound_name: str) -> CompoundInfo:
