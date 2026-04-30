@@ -3,7 +3,7 @@ from typing import Any
 import requests
 from pydantic import BaseModel, Field
 
-from app.main import PUBCHEM_API_URL, SYNONYMS_ENDPOINT_TEMPLATE
+from app.config import PUBCHEM_API_URL, SYNONYMS_ENDPOINT_TEMPLATE
 
 type Json = dict[str, Any]
 
