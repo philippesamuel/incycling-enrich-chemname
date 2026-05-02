@@ -1,5 +1,5 @@
 [project]
-name = "incycling-enrich-chemname"
+name = "find-cas"
 version = "0.1.0"
 description = "CLI tool to resolve chemical compound names to CAS numbers via PubChem"
 readme = "README.md"

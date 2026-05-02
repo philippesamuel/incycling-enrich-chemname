@@ -7,16 +7,16 @@ Resolve chemical compound names to CAS numbers via PubChem.
 ### From GitHub
 
 ```bash
-pip install git+https://github.com/philippesamuel/incycling-enrich-chemname.git
+pip install git+https://github.com/philippesamuel/find-cas.git
 # or
-uv pip install git+https://github.com/philippesamuel/incycling-enrich-chemname.git
+uv pip install git+https://github.com/philippesamuel/find-cas.git
 ```
 
 ### Clone and install
 
 ```bash
-git clone https://github.com/philippesamuel/incycling-enrich-chemname.git
-cd <repo>
+git clone https://github.com/philippesamuel/find-cas.git
+cd find-cas
 pip install .
 # or
 uv pip install .
@@ -25,8 +25,8 @@ uv pip install .
 in editable mode
 
 ```bash
-git clone https://github.com/philippesamuel/incycling-enrich-chemname.git
-cd incycling-enrich-chemname
+git clone https://github.com/philippesamuel/find-cas.git
+cd find-cas
 pip install -e .
 # or
 uv pip install -e .
